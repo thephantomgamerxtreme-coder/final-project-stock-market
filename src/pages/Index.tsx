@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   INVESTOR_TYPES,
   InvestorType,
@@ -16,6 +16,8 @@ import { ResultsScreen } from "@/components/stockquest/ResultsScreen";
 import { NewspaperScreen } from "@/components/stockquest/NewspaperScreen";
 import { WinScreen } from "@/components/stockquest/WinScreen";
 import { DictionaryModal } from "@/components/stockquest/DictionaryModal";
+import { audio } from "@/audio/audioEngine";
+import { useAudioUnlock, useMute } from "@/audio/useAudio";
 
 type Phase = "home" | "level" | "results" | "newspaper" | "win";
 
