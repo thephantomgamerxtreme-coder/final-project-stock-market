@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { COMPANIES, HINTS, LIFELINES, LevelConfig, NewsHint, TIMER_LEVELS, TIMER_SECONDS } from "@/game/constants";
+import { COMPANIES, HINTS, LIFELINES, LevelConfig, NewsHint, TIMER_LEVELS, TIMER_SECONDS, VAULT_UNLOCK_LEVEL } from "@/game/constants";
 import { Allocation, lifelineReveal } from "@/game/engine";
-import { Lightbulb, AlertTriangle, Clock } from "lucide-react";
+import { Lightbulb, AlertTriangle, Clock, Vault, Lock } from "lucide-react";
 import { BossNewsModal } from "./BossNewsModal";
 import { audio } from "@/audio/audioEngine";
 
@@ -10,9 +10,11 @@ interface LevelScreenProps {
   pool: number;
   lifelinesLeft: number;
   onUseLifeline: (hintId: string) => string; // returns sector revealed
-  onInvest: (allocation: Allocation, confidence: "low" | "medium" | "high", bossHintId: string | null) => void;
+  onInvest: (allocation: Allocation, confidence: "low" | "medium" | "high", bossHintId: string | null, vaultDeposit: number) => void;
   onBossOpen?: () => void;
   onBossClose?: () => void;
+  vaultUnlocked: boolean;
+  vaultBalance: number;
 }
 
 export function LevelScreen({ config, pool, lifelinesLeft, onUseLifeline, onInvest, onBossOpen, onBossClose }: LevelScreenProps) {
