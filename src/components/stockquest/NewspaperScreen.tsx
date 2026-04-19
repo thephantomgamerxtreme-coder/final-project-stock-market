@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { LevelConfig } from "@/game/constants";
+import { audio } from "@/audio/audioEngine";
 
 interface NewspaperScreenProps {
   config: LevelConfig;
@@ -9,6 +10,7 @@ interface NewspaperScreenProps {
 export function NewspaperScreen({ config, onContinue }: NewspaperScreenProps) {
   const [secs, setSecs] = useState(4);
   useEffect(() => {
+    audio.sfxNewspaper();
     const t = setInterval(() => setSecs((s) => s - 1), 1000);
     return () => clearInterval(t);
   }, []);
