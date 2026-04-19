@@ -213,6 +213,7 @@ export const HINTS: Record<string, NewsHint> = {
 export const LEVELS: LevelConfig[] = [
   {
     level: 1,
+    subtitle: "First Trade",
     tickers: ["NRGX", "FUELX"],
     hintIds: ["green_subsidy", "opec_cut", "rate_cut", "drought", "travel_boom"],
     newspaper: { headline: "GREEN ENERGY GETS A GOVERNMENT BOOST", subhead: "Solar shines, but oil holds steady on supply cuts." },
@@ -220,6 +221,7 @@ export const LEVELS: LevelConfig[] = [
   },
   {
     level: 2,
+    subtitle: "AI Awakens",
     tickers: ["TECHX", "HLTH"],
     hintIds: ["ai_breakthrough", "hospital_funding", "rate_hike", "recession", "cyber_attack"],
     newspaper: { headline: "AI MANIA SWEEPS WALL STREET", subhead: "Tech soars while hospitals get a quiet windfall." },
@@ -227,6 +229,7 @@ export const LEVELS: LevelConfig[] = [
   },
   {
     level: 3,
+    subtitle: "Pandemic Shock",
     tickers: ["AIRX", "MEDX"],
     hintIds: ["travel_boom", "pandemic", "rate_cut", "geopolitics", "ai_breakthrough"],
     isBoss: true,
@@ -236,6 +239,7 @@ export const LEVELS: LevelConfig[] = [
   },
   {
     level: 4,
+    subtitle: "Rate Hike",
     tickers: ["BANKX", "BRIX", "FUELX"],
     hintIds: ["rate_hike", "infra_bill", "opec_cut", "bank_crisis", "geopolitics"],
     newspaper: { headline: "RATES UP, BUILDERS BUSY, OIL FIRM", subhead: "Banks cheer higher yields as construction booms." },
@@ -243,6 +247,7 @@ export const LEVELS: LevelConfig[] = [
   },
   {
     level: 5,
+    subtitle: "Cyber Storm",
     tickers: ["CLOUDX", "TECHX", "AGRIX"],
     hintIds: ["cyber_attack", "ai_breakthrough", "drought", "rate_cut", "organic_trend"],
     newspaper: { headline: "HACKERS STRIKE — CYBER STOCKS SURGE", subhead: "AI wave continues; grain markets fight a brutal drought." },
@@ -250,6 +255,7 @@ export const LEVELS: LevelConfig[] = [
   },
   {
     level: 6,
+    subtitle: "Recession Alarm",
     tickers: ["LUXEX", "AIRX", "BANKX"],
     hintIds: ["travel_boom", "recession", "rate_hike", "geopolitics", "infra_bill"],
     isBoss: true,
@@ -259,6 +265,7 @@ export const LEVELS: LevelConfig[] = [
   },
   {
     level: 7,
+    subtitle: "Drought Bites",
     tickers: ["NRGX", "FUELX", "AGRIX", "GRAINX", "TECHX"],
     hintIds: ["green_subsidy", "opec_cut", "drought", "organic_trend", "ai_breakthrough"],
     newspaper: { headline: "DROUGHT CRUSHES GRAIN, ORGANIC FARMS RISE", subhead: "Solar subsidies and AI hype keep growth stocks alive." },
@@ -266,6 +273,7 @@ export const LEVELS: LevelConfig[] = [
   },
   {
     level: 8,
+    subtitle: "Mixed Signals",
     tickers: ["MEDX", "HLTH", "CLOUDX", "BANKX", "BRIX"],
     hintIds: ["pandemic", "hospital_funding", "cyber_attack", "rate_hike", "infra_bill"],
     newspaper: { headline: "HEALTH AND CYBER LEAD A MIXED MARKET", subhead: "Bond yields rise, builders steady, vaccines back in focus." },
@@ -273,15 +281,17 @@ export const LEVELS: LevelConfig[] = [
   },
   {
     level: 9,
+    subtitle: "Trade War",
     tickers: ["AIRX", "LUXEX", "FUELX", "MEDX", "GRAINX"],
     hintIds: ["geopolitics", "travel_boom", "opec_cut", "pandemic", "drought"],
     isBoss: true,
     bossNews: HINTS.geopolitics,
     newspaper: { headline: "CONFLICT JOLTS GLOBAL TRADE", subhead: "Oil rockets, airlines stall, food prices climb worldwide." },
-    unlockTerms: ["volatility"], // already unlocked? handled by Set
+    unlockTerms: ["volatility"],
   },
   {
     level: 10,
+    subtitle: "Final Bell",
     tickers: ["TECHX", "CLOUDX", "BANKX", "NRGX", "LUXEX"],
     hintIds: ["ai_breakthrough", "cyber_attack", "rate_cut", "green_subsidy", "recession"],
     newspaper: { headline: "FINAL BELL: AI BOOM MEETS RECESSION FEARS", subhead: "Traders weigh innovation against an uncertain economy." },
