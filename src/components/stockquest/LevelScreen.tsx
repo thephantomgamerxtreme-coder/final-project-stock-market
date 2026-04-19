@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { COMPANIES, HINTS, LIFELINES, LevelConfig, NewsHint, TIMER_LEVELS, TIMER_SECONDS } from "@/game/constants";
+import { COMPANIES, HINTS, LIFELINES, LevelConfig, NewsHint, TIMER_LEVELS, TIMER_SECONDS, VAULT_UNLOCK_LEVEL } from "@/game/constants";
 import { Allocation, lifelineReveal } from "@/game/engine";
-import { Lightbulb, AlertTriangle, Clock } from "lucide-react";
+import { Lightbulb, AlertTriangle, Clock, Vault, Lock } from "lucide-react";
 import { BossNewsModal } from "./BossNewsModal";
 import { audio } from "@/audio/audioEngine";
 
@@ -10,12 +10,17 @@ interface LevelScreenProps {
   pool: number;
   lifelinesLeft: number;
   onUseLifeline: (hintId: string) => string; // returns sector revealed
-  onInvest: (allocation: Allocation, confidence: "low" | "medium" | "high", bossHintId: string | null) => void;
+  onInvest: (allocation: Allocation, confidence: "low" | "medium" | "high", bossHintId: string | null, vaultDeposit: number) => void;
   onBossOpen?: () => void;
   onBossClose?: () => void;
+  vaultUnlocked: boolean;
+  vaultBalance: number;
 }
 
-export function LevelScreen({ config, pool, lifelinesLeft, onUseLifeline, onInvest, onBossOpen, onBossClose }: LevelScreenProps) {
+export function LevelScreen({
+  config, pool, lifelinesLeft, onUseLifeline, onInvest, onBossOpen, onBossClose,
+  vaultUnlocked, vaultBalance,
+}: LevelScreenProps) {
   const [allocation, setAllocation] = useState<Allocation>(() =>
     Object.fromEntries(config.tickers.map((t) => [t, 0])),
   );
@@ -24,6 +29,8 @@ export function LevelScreen({ config, pool, lifelinesLeft, onUseLifeline, onInve
   const [showBoss, setShowBoss] = useState(false);
   const [bossSeen, setBossSeen] = useState(false);
   const [pendingSubmit, setPendingSubmit] = useState(false);
+  // Vault deposit slider (only available once unlocked). Caps at current pool.
+  const [vaultDeposit, setVaultDeposit] = useState(0);
 
   // Timer for levels 9 & 10
   const hasTimer = TIMER_LEVELS.includes(config.level);
@@ -41,17 +48,23 @@ export function LevelScreen({ config, pool, lifelinesLeft, onUseLifeline, onInve
     return () => clearInterval(id);
   }, [hasTimer]);
 
+  // Money actually being put into the market this round.
+  const investablePool = Math.max(0, +(pool - vaultDeposit).toFixed(2));
   const allocated = config.tickers.reduce((s, t) => s + (allocation[t] ?? 0), 0);
   const overAllocated = allocated > 100;
-  const validAllocation = allocated > 0 && allocated <= 100;
+  // Vault locked → must invest 100%. Vault unlocked → 1-100% is fine (rest stays as cash, vault deposit is separate).
+  const mustInvestAll = !vaultUnlocked;
+  const validAllocation = mustInvestAll
+    ? allocated === 100
+    : allocated > 0 && allocated <= 100;
 
   // Auto-submit when timer runs out
   useEffect(() => {
     if (hasTimer && secondsLeft === 0 && !pendingSubmit) {
       setPendingSubmit(true);
-      onInvest(allocation, confidence ?? "low", config.isBoss && bossSeen ? config.bossNews!.id : null);
+      onInvest(allocation, confidence ?? "low", config.isBoss && bossSeen ? config.bossNews!.id : null, vaultDeposit);
     }
-  }, [secondsLeft, hasTimer, allocation, confidence, onInvest, pendingSubmit, config.isBoss, config.bossNews, bossSeen]);
+  }, [secondsLeft, hasTimer, allocation, confidence, onInvest, pendingSubmit, config.isBoss, config.bossNews, bossSeen, vaultDeposit]);
 
   function setPct(ticker: string, val: number) {
     audio.sfxTick();
@@ -65,7 +78,7 @@ export function LevelScreen({ config, pool, lifelinesLeft, onUseLifeline, onInve
       onBossOpen?.();
       return;
     }
-    onInvest(allocation, confidence, config.isBoss ? config.bossNews!.id : null);
+    onInvest(allocation, confidence, config.isBoss ? config.bossNews!.id : null, vaultDeposit);
   }
 
   function handleBossClose() {
@@ -118,7 +131,7 @@ export function LevelScreen({ config, pool, lifelinesLeft, onUseLifeline, onInve
                     <div className="text-right">
                       <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Allocated</div>
                       <div className="font-mono-num text-lg font-bold">{v}%</div>
-                      <div className="font-mono-num text-xs text-muted-foreground">${((pool * v) / 100).toFixed(2)}</div>
+                      <div className="font-mono-num text-xs text-muted-foreground">${((investablePool * v) / 100).toFixed(2)}</div>
                     </div>
                   </div>
                   <input
@@ -136,11 +149,55 @@ export function LevelScreen({ config, pool, lifelinesLeft, onUseLifeline, onInve
             })}
           </div>
 
+          {/* Vault panel */}
+          <div className={`panel mt-4 p-4 ${vaultUnlocked ? "border-secondary/40" : "opacity-80"}`}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                {vaultUnlocked ? <Vault className="h-4 w-4 text-secondary" /> : <Lock className="h-4 w-4 text-muted-foreground" />}
+                <div>
+                  <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Vault</div>
+                  <div className="text-sm font-bold">
+                    {vaultUnlocked
+                      ? <>Save some cash safely <span className="text-muted-foreground">(stays out of the market)</span></>
+                      : `🔒 Unlocks at Level ${VAULT_UNLOCK_LEVEL} — until then you must invest 100%`}
+                  </div>
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="text-[10px] uppercase tracking-widest text-muted-foreground">In vault</div>
+                <div className="font-mono-num text-sm font-bold text-secondary">${vaultBalance.toFixed(2)}</div>
+              </div>
+            </div>
+            {vaultUnlocked && (
+              <>
+                <div className="mt-3 flex items-center justify-between text-xs">
+                  <span className="text-muted-foreground">Deposit this round</span>
+                  <span className="font-mono-num font-bold text-secondary">${vaultDeposit.toFixed(2)} of ${pool.toFixed(2)}</span>
+                </div>
+                <input
+                  type="range"
+                  min={0}
+                  max={Math.floor(pool)}
+                  step={1}
+                  value={vaultDeposit}
+                  onChange={(e) => { audio.sfxTick(); setVaultDeposit(Number(e.target.value)); }}
+                  className="mt-2 w-full accent-secondary"
+                  aria-label="Deposit amount to vault"
+                />
+                <div className="mt-1 text-[10px] text-muted-foreground">
+                  Investing <span className="font-mono-num font-bold text-primary">${investablePool.toFixed(2)}</span> this round.
+                </div>
+              </>
+            )}
+          </div>
+
           {/* Allocation totals + confidence + invest */}
           <div className="panel mt-4 p-4">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Total allocated</span>
-              <span className={`font-mono-num text-xl font-extrabold ${overAllocated ? "text-loss" : allocated === 100 ? "text-primary" : "text-foreground"}`}>
+              <span className="text-sm text-muted-foreground">
+                Total allocated {mustInvestAll && <span className="ml-1 text-[10px] uppercase tracking-widest text-loss">must = 100%</span>}
+              </span>
+              <span className={`font-mono-num text-xl font-extrabold ${overAllocated ? "text-loss" : allocated === 100 ? "text-primary" : mustInvestAll ? "text-loss" : "text-foreground"}`}>
                 {allocated}%
               </span>
             </div>
@@ -153,6 +210,11 @@ export function LevelScreen({ config, pool, lifelinesLeft, onUseLifeline, onInve
             {overAllocated && (
               <div className="mt-2 flex items-center gap-1.5 text-xs text-loss">
                 <AlertTriangle className="h-3.5 w-3.5" /> Over 100% — reduce some sliders.
+              </div>
+            )}
+            {mustInvestAll && allocated < 100 && !overAllocated && (
+              <div className="mt-2 flex items-center gap-1.5 text-xs text-loss">
+                <AlertTriangle className="h-3.5 w-3.5" /> Vault locked — allocate exactly 100% across the companies.
               </div>
             )}
 

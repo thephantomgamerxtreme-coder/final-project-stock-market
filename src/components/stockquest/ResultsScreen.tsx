@@ -1,6 +1,6 @@
 import { COMPANIES, LevelConfig } from "@/game/constants";
 import { LevelOutcome, confidenceFeedback } from "@/game/engine";
-import { Star, ArrowRight, Flame, Sparkles } from "lucide-react";
+import { Star, ArrowRight, Flame, Sparkles, Award, Map } from "lucide-react";
 import { ConnectionDiagram } from "./ConnectionDiagram";
 
 interface ResultsScreenProps {
@@ -13,9 +13,16 @@ interface ResultsScreenProps {
   losingStreak: boolean;
   onNext: () => void;
   isLast: boolean;
+  roundStars: number; // 1-3 stars earned this round
+  personalBest: boolean;
+  previousStars: number;
+  onBackToMap: () => void;
 }
 
-export function ResultsScreen({ config, outcome, pool, newWorth, confidence, hotStreak, losingStreak, onNext, isLast }: ResultsScreenProps) {
+export function ResultsScreen({
+  config, outcome, pool, newWorth, confidence, hotStreak, losingStreak, onNext, isLast,
+  roundStars, personalBest, previousStars, onBackToMap,
+}: ResultsScreenProps) {
   const win = outcome.profit >= 0;
   const profitAbs = Math.abs(outcome.profit);
 
@@ -124,8 +131,27 @@ export function ResultsScreen({ config, outcome, pool, newWorth, confidence, hot
         <p className="mt-2 text-sm text-muted-foreground">{outcome.realWorld}</p>
       </div>
 
-      {/* Summary + next */}
-      <div className="mt-5 flex flex-col items-center gap-4 text-center">
+      {/* Round stars + Personal Best */}
+      <div className="mt-5 flex flex-col items-center gap-3 text-center">
+        {personalBest && previousStars < roundStars && (
+          <div className="inline-flex items-center gap-2 rounded-full bg-gradient-amber px-4 py-1.5 text-sm font-extrabold text-accent-foreground shadow-amber animate-flash-in">
+            <Award className="h-4 w-4" /> Personal Best! {previousStars} → {roundStars} ⭐
+          </div>
+        )}
+        <div className="flex items-center gap-2">
+          <span className="text-xs uppercase tracking-widest text-muted-foreground">Stars this round</span>
+          <div className="flex items-center gap-0.5">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <Star
+                key={i}
+                className={`h-6 w-6 ${i < roundStars ? "text-accent animate-flash-in" : "text-muted-foreground/30"}`}
+                style={{ animationDelay: `${i * 120}ms` }}
+                fill={i < roundStars ? "currentColor" : "none"}
+              />
+            ))}
+          </div>
+        </div>
+
         <p className="text-sm">
           Your portfolio is now worth{" "}
           <span className="font-mono-num text-xl font-extrabold text-accent">${newWorth.toFixed(2)}</span>. Keep going!
@@ -135,6 +161,12 @@ export function ResultsScreen({ config, outcome, pool, newWorth, confidence, hot
           className="rounded-xl bg-gradient-primary px-8 py-3 text-sm font-extrabold uppercase tracking-widest text-primary-foreground glow-primary hover:scale-105"
         >
           {isLast ? "See your final score →" : "Read the headlines →"}
+        </button>
+        <button
+          onClick={onBackToMap}
+          className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-accent"
+        >
+          <Map className="h-3.5 w-3.5" /> ← Back to Level Map
         </button>
       </div>
     </div>
