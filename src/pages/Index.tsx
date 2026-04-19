@@ -78,10 +78,12 @@ const Index = () => {
   function handleUseLifeline(hintId: string): string {
     if (lifelinesLeft <= 0) return "";
     setLifelinesLeft((n) => n - 1);
+    audio.sfxLifeline();
     return lifelineReveal(hintId);
   }
 
   function handleInvest(allocation: Allocation, confidence: "low" | "medium" | "high", bossHintId: string | null) {
+    audio.sfxInvest();
     const cfg = LEVELS[levelIdx];
     const pool = worth;
     const outcome = runLevel(cfg.level, pool, allocation, bossHintId ? [bossHintId] : []);
@@ -95,14 +97,22 @@ const Index = () => {
     if (newKeys.length > 0) {
       setUnlockedTerms((prev) => Array.from(new Set([...prev, ...newKeys])));
       setNewlyUnlocked(newKeys);
+      setTimeout(() => audio.sfxUnlock(), 900);
     } else {
       setNewlyUnlocked([]);
     }
+
+    // Result chime
+    setTimeout(() => {
+      if (outcome.profit >= 0) audio.sfxProfit();
+      else audio.sfxLoss();
+    }, 250);
 
     // Track history
     const hadWinningPick = outcome.results.some((r) => r.invested > 0 && r.pctChange > 0);
     setHistory((h) => [...h, { level: cfg.level, profit: outcome.profit, diversificationStars: outcome.diversificationStars, hadWinningPick }]);
 
+    setBossActive(false);
     setPhase("results");
   }
 
