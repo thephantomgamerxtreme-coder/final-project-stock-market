@@ -34,6 +34,7 @@ export interface NewsHint {
 
 export interface LevelConfig {
   level: number;
+  subtitle: string; // short adventure-style title for the map
   tickers: string[]; // companies offered
   hintIds: string[]; // 5 hint cards
   isBoss?: boolean;
@@ -41,6 +42,31 @@ export interface LevelConfig {
   newspaper: { headline: string; subhead: string };
   unlockTerms: string[]; // keys from MARKET_DICTIONARY
 }
+
+export interface RankTier {
+  title: string;
+  minStars: number;
+  maxStars: number;
+  emoji: string;
+}
+
+export const RANK_TIERS: RankTier[] = [
+  { title: "Intern",            minStars: 0,  maxStars: 5,  emoji: "🎓" },
+  { title: "Junior Analyst",    minStars: 6,  maxStars: 10, emoji: "📊" },
+  { title: "Market Watcher",    minStars: 11, maxStars: 15, emoji: "🔍" },
+  { title: "Fund Manager",      minStars: 16, maxStars: 20, emoji: "💼" },
+  { title: "Portfolio Pro",     minStars: 21, maxStars: 25, emoji: "🏆" },
+  { title: "Market Guru",       minStars: 26, maxStars: 29, emoji: "🧙" },
+  { title: "Wall Street Legend",minStars: 30, maxStars: 30, emoji: "👑" },
+];
+
+export function getRank(stars: number): RankTier {
+  return RANK_TIERS.find((r) => stars >= r.minStars && stars <= r.maxStars) ?? RANK_TIERS[0];
+}
+
+// Vault unlocks at this level. Before this, players must invest 100% of their pool.
+export const VAULT_UNLOCK_LEVEL = 5;
+export const MAX_STARS = 30;
 
 export interface InvestorType {
   id: "risk" | "strategist" | "safe";
