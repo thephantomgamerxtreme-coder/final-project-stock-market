@@ -1,6 +1,6 @@
 import { COMPANIES, LevelConfig } from "@/game/constants";
 import { LevelOutcome, confidenceFeedback } from "@/game/engine";
-import { Star, ArrowRight, Flame, Sparkles } from "lucide-react";
+import { Star, ArrowRight, Flame, Sparkles, Award, Map } from "lucide-react";
 import { ConnectionDiagram } from "./ConnectionDiagram";
 
 interface ResultsScreenProps {
@@ -13,9 +13,16 @@ interface ResultsScreenProps {
   losingStreak: boolean;
   onNext: () => void;
   isLast: boolean;
+  roundStars: number; // 1-3 stars earned this round
+  personalBest: boolean;
+  previousStars: number;
+  onBackToMap: () => void;
 }
 
-export function ResultsScreen({ config, outcome, pool, newWorth, confidence, hotStreak, losingStreak, onNext, isLast }: ResultsScreenProps) {
+export function ResultsScreen({
+  config, outcome, pool, newWorth, confidence, hotStreak, losingStreak, onNext, isLast,
+  roundStars, personalBest, previousStars, onBackToMap,
+}: ResultsScreenProps) {
   const win = outcome.profit >= 0;
   const profitAbs = Math.abs(outcome.profit);
 
