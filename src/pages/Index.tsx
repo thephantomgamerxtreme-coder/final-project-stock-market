@@ -37,6 +37,10 @@ const Index = () => {
   const [unlockedTerms, setUnlockedTerms] = useState<string[]>([]);
   const [newlyUnlocked, setNewlyUnlocked] = useState<string[]>([]);
   const [dictionaryOpen, setDictionaryOpen] = useState(false);
+  const [bossActive, setBossActive] = useState(false);
+
+  useAudioUnlock();
+  const { muted, toggle: toggleMute } = useMute();
 
   // Last round state
   const [lastOutcome, setLastOutcome] = useState<LevelOutcome | null>(null);
@@ -52,6 +56,13 @@ const Index = () => {
 
   const hotStreak = history.slice(-3).length === 3 && history.slice(-3).every((r) => r.profit > 0);
   const losingStreak = history.slice(-2).length === 2 && history.slice(-2).every((r) => r.profit < 0);
+
+  // Music orchestration based on phase + boss state
+  useEffect(() => {
+    if (phase === "home") audio.startMusic("home");
+    else if (phase === "win") audio.startMusic("win");
+    else audio.startMusic(bossActive ? "boss" : "level");
+  }, [phase, bossActive]);
 
   function handleStart() {
     if (!investorTypeId) return;
