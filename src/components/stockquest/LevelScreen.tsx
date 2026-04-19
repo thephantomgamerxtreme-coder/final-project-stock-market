@@ -17,7 +17,10 @@ interface LevelScreenProps {
   vaultBalance: number;
 }
 
-export function LevelScreen({ config, pool, lifelinesLeft, onUseLifeline, onInvest, onBossOpen, onBossClose }: LevelScreenProps) {
+export function LevelScreen({
+  config, pool, lifelinesLeft, onUseLifeline, onInvest, onBossOpen, onBossClose,
+  vaultUnlocked, vaultBalance,
+}: LevelScreenProps) {
   const [allocation, setAllocation] = useState<Allocation>(() =>
     Object.fromEntries(config.tickers.map((t) => [t, 0])),
   );
@@ -26,6 +29,8 @@ export function LevelScreen({ config, pool, lifelinesLeft, onUseLifeline, onInve
   const [showBoss, setShowBoss] = useState(false);
   const [bossSeen, setBossSeen] = useState(false);
   const [pendingSubmit, setPendingSubmit] = useState(false);
+  // Vault deposit slider (only available once unlocked). Caps at current pool.
+  const [vaultDeposit, setVaultDeposit] = useState(0);
 
   // Timer for levels 9 & 10
   const hasTimer = TIMER_LEVELS.includes(config.level);
@@ -43,17 +48,23 @@ export function LevelScreen({ config, pool, lifelinesLeft, onUseLifeline, onInve
     return () => clearInterval(id);
   }, [hasTimer]);
 
+  // Money actually being put into the market this round.
+  const investablePool = Math.max(0, +(pool - vaultDeposit).toFixed(2));
   const allocated = config.tickers.reduce((s, t) => s + (allocation[t] ?? 0), 0);
   const overAllocated = allocated > 100;
-  const validAllocation = allocated > 0 && allocated <= 100;
+  // Vault locked → must invest 100%. Vault unlocked → 1-100% is fine (rest stays as cash, vault deposit is separate).
+  const mustInvestAll = !vaultUnlocked;
+  const validAllocation = mustInvestAll
+    ? allocated === 100
+    : allocated > 0 && allocated <= 100;
 
   // Auto-submit when timer runs out
   useEffect(() => {
     if (hasTimer && secondsLeft === 0 && !pendingSubmit) {
       setPendingSubmit(true);
-      onInvest(allocation, confidence ?? "low", config.isBoss && bossSeen ? config.bossNews!.id : null);
+      onInvest(allocation, confidence ?? "low", config.isBoss && bossSeen ? config.bossNews!.id : null, vaultDeposit);
     }
-  }, [secondsLeft, hasTimer, allocation, confidence, onInvest, pendingSubmit, config.isBoss, config.bossNews, bossSeen]);
+  }, [secondsLeft, hasTimer, allocation, confidence, onInvest, pendingSubmit, config.isBoss, config.bossNews, bossSeen, vaultDeposit]);
 
   function setPct(ticker: string, val: number) {
     audio.sfxTick();
@@ -67,7 +78,7 @@ export function LevelScreen({ config, pool, lifelinesLeft, onUseLifeline, onInve
       onBossOpen?.();
       return;
     }
-    onInvest(allocation, confidence, config.isBoss ? config.bossNews!.id : null);
+    onInvest(allocation, confidence, config.isBoss ? config.bossNews!.id : null, vaultDeposit);
   }
 
   function handleBossClose() {
