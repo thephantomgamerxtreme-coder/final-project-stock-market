@@ -3,6 +3,7 @@ import { COMPANIES, HINTS, LIFELINES, LevelConfig, NewsHint, TIMER_LEVELS, TIMER
 import { Allocation, lifelineReveal } from "@/game/engine";
 import { Lightbulb, AlertTriangle, Clock } from "lucide-react";
 import { BossNewsModal } from "./BossNewsModal";
+import { audio } from "@/audio/audioEngine";
 
 interface LevelScreenProps {
   config: LevelConfig;
@@ -10,9 +11,11 @@ interface LevelScreenProps {
   lifelinesLeft: number;
   onUseLifeline: (hintId: string) => string; // returns sector revealed
   onInvest: (allocation: Allocation, confidence: "low" | "medium" | "high", bossHintId: string | null) => void;
+  onBossOpen?: () => void;
+  onBossClose?: () => void;
 }
 
-export function LevelScreen({ config, pool, lifelinesLeft, onUseLifeline, onInvest }: LevelScreenProps) {
+export function LevelScreen({ config, pool, lifelinesLeft, onUseLifeline, onInvest, onBossOpen, onBossClose }: LevelScreenProps) {
   const [allocation, setAllocation] = useState<Allocation>(() =>
     Object.fromEntries(config.tickers.map((t) => [t, 0])),
   );
@@ -28,7 +31,13 @@ export function LevelScreen({ config, pool, lifelinesLeft, onUseLifeline, onInve
 
   useEffect(() => {
     if (!hasTimer) return;
-    const id = setInterval(() => setSecondsLeft((s) => Math.max(0, s - 1)), 1000);
+    const id = setInterval(() => {
+      setSecondsLeft((s) => {
+        const next = Math.max(0, s - 1);
+        if (next > 0 && next <= 60) audio.sfxTimerTick();
+        return next;
+      });
+    }, 1000);
     return () => clearInterval(id);
   }, [hasTimer]);
 
@@ -45,6 +54,7 @@ export function LevelScreen({ config, pool, lifelinesLeft, onUseLifeline, onInve
   }, [secondsLeft, hasTimer, allocation, confidence, onInvest, pendingSubmit, config.isBoss, config.bossNews, bossSeen]);
 
   function setPct(ticker: string, val: number) {
+    audio.sfxTick();
     setAllocation((a) => ({ ...a, [ticker]: val }));
   }
 
@@ -52,6 +62,7 @@ export function LevelScreen({ config, pool, lifelinesLeft, onUseLifeline, onInve
     if (!validAllocation || !confidence) return;
     if (config.isBoss && !bossSeen) {
       setShowBoss(true);
+      onBossOpen?.();
       return;
     }
     onInvest(allocation, confidence, config.isBoss ? config.bossNews!.id : null);
@@ -60,6 +71,7 @@ export function LevelScreen({ config, pool, lifelinesLeft, onUseLifeline, onInve
   function handleBossClose() {
     setShowBoss(false);
     setBossSeen(true);
+    onBossClose?.();
   }
 
   const minutes = Math.floor(secondsLeft / 60);

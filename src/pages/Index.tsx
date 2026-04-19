@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   INVESTOR_TYPES,
   InvestorType,
@@ -16,6 +16,8 @@ import { ResultsScreen } from "@/components/stockquest/ResultsScreen";
 import { NewspaperScreen } from "@/components/stockquest/NewspaperScreen";
 import { WinScreen } from "@/components/stockquest/WinScreen";
 import { DictionaryModal } from "@/components/stockquest/DictionaryModal";
+import { audio } from "@/audio/audioEngine";
+import { useAudioUnlock, useMute } from "@/audio/useAudio";
 
 type Phase = "home" | "level" | "results" | "newspaper" | "win";
 
@@ -35,6 +37,10 @@ const Index = () => {
   const [unlockedTerms, setUnlockedTerms] = useState<string[]>([]);
   const [newlyUnlocked, setNewlyUnlocked] = useState<string[]>([]);
   const [dictionaryOpen, setDictionaryOpen] = useState(false);
+  const [bossActive, setBossActive] = useState(false);
+
+  useAudioUnlock();
+  const { muted, toggle: toggleMute } = useMute();
 
   // Last round state
   const [lastOutcome, setLastOutcome] = useState<LevelOutcome | null>(null);
@@ -51,6 +57,13 @@ const Index = () => {
   const hotStreak = history.slice(-3).length === 3 && history.slice(-3).every((r) => r.profit > 0);
   const losingStreak = history.slice(-2).length === 2 && history.slice(-2).every((r) => r.profit < 0);
 
+  // Music orchestration based on phase + boss state
+  useEffect(() => {
+    if (phase === "home") audio.startMusic("home");
+    else if (phase === "win") audio.startMusic("win");
+    else audio.startMusic(bossActive ? "boss" : "level");
+  }, [phase, bossActive]);
+
   function handleStart() {
     if (!investorTypeId) return;
     setLevelIdx(0);
@@ -65,10 +78,12 @@ const Index = () => {
   function handleUseLifeline(hintId: string): string {
     if (lifelinesLeft <= 0) return "";
     setLifelinesLeft((n) => n - 1);
+    audio.sfxLifeline();
     return lifelineReveal(hintId);
   }
 
   function handleInvest(allocation: Allocation, confidence: "low" | "medium" | "high", bossHintId: string | null) {
+    audio.sfxInvest();
     const cfg = LEVELS[levelIdx];
     const pool = worth;
     const outcome = runLevel(cfg.level, pool, allocation, bossHintId ? [bossHintId] : []);
@@ -82,14 +97,22 @@ const Index = () => {
     if (newKeys.length > 0) {
       setUnlockedTerms((prev) => Array.from(new Set([...prev, ...newKeys])));
       setNewlyUnlocked(newKeys);
+      setTimeout(() => audio.sfxUnlock(), 900);
     } else {
       setNewlyUnlocked([]);
     }
+
+    // Result chime
+    setTimeout(() => {
+      if (outcome.profit >= 0) audio.sfxProfit();
+      else audio.sfxLoss();
+    }, 250);
 
     // Track history
     const hadWinningPick = outcome.results.some((r) => r.invested > 0 && r.pctChange > 0);
     setHistory((h) => [...h, { level: cfg.level, profit: outcome.profit, diversificationStars: outcome.diversificationStars, hadWinningPick }]);
 
+    setBossActive(false);
     setPhase("results");
   }
 
@@ -150,6 +173,8 @@ const Index = () => {
         investor={investor}
         onOpenDictionary={() => setDictionaryOpen(true)}
         unlockedCount={unlockedTerms.length}
+        muted={muted}
+        onToggleMute={toggleMute}
       />
 
       {phase === "level" && (
@@ -159,6 +184,8 @@ const Index = () => {
           lifelinesLeft={lifelinesLeft}
           onUseLifeline={handleUseLifeline}
           onInvest={handleInvest}
+          onBossOpen={() => setBossActive(true)}
+          onBossClose={() => setBossActive(false)}
         />
       )}
 

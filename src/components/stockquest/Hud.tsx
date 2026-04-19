@@ -1,4 +1,4 @@
-import { BookOpen } from "lucide-react";
+import { BookOpen, Volume2, VolumeX } from "lucide-react";
 import { InvestorType } from "@/game/constants";
 
 interface HudProps {
@@ -9,9 +9,11 @@ interface HudProps {
   investor: InvestorType;
   onOpenDictionary: () => void;
   unlockedCount: number;
+  muted: boolean;
+  onToggleMute: () => void;
 }
 
-export function Hud({ portfolio, totalWorth, level, totalLevels, investor, onOpenDictionary, unlockedCount }: HudProps) {
+export function Hud({ portfolio, totalWorth, level, totalLevels, investor, onOpenDictionary, unlockedCount, muted, onToggleMute }: HudProps) {
   return (
     <div className="sticky top-0 z-30 border-b border-border bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70">
       <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-3 px-4 py-3 sm:gap-4">
@@ -43,6 +45,14 @@ export function Hud({ portfolio, totalWorth, level, totalLevels, investor, onOpe
             <BookOpen className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Dictionary</span>
             <span className="rounded bg-accent/20 px-1.5 py-0.5 text-[10px] font-bold text-accent">{unlockedCount}</span>
+          </button>
+          <button
+            onClick={onToggleMute}
+            className={`inline-flex items-center justify-center rounded-md border bg-surface p-1.5 transition ${muted ? "border-loss/60 text-loss hover:border-loss" : "border-border text-foreground hover:border-accent hover:text-accent"}`}
+            aria-label={muted ? "Unmute audio" : "Mute audio"}
+            title={muted ? "Unmute" : "Mute"}
+          >
+            {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
           </button>
         </div>
       </div>
