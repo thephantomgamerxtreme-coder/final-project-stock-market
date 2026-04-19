@@ -131,7 +131,7 @@ export function LevelScreen({
                     <div className="text-right">
                       <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Allocated</div>
                       <div className="font-mono-num text-lg font-bold">{v}%</div>
-                      <div className="font-mono-num text-xs text-muted-foreground">${((pool * v) / 100).toFixed(2)}</div>
+                      <div className="font-mono-num text-xs text-muted-foreground">${((investablePool * v) / 100).toFixed(2)}</div>
                     </div>
                   </div>
                   <input
@@ -149,11 +149,55 @@ export function LevelScreen({
             })}
           </div>
 
+          {/* Vault panel */}
+          <div className={`panel mt-4 p-4 ${vaultUnlocked ? "border-secondary/40" : "opacity-80"}`}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                {vaultUnlocked ? <Vault className="h-4 w-4 text-secondary" /> : <Lock className="h-4 w-4 text-muted-foreground" />}
+                <div>
+                  <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Vault</div>
+                  <div className="text-sm font-bold">
+                    {vaultUnlocked
+                      ? <>Save some cash safely <span className="text-muted-foreground">(stays out of the market)</span></>
+                      : `🔒 Unlocks at Level ${VAULT_UNLOCK_LEVEL} — until then you must invest 100%`}
+                  </div>
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="text-[10px] uppercase tracking-widest text-muted-foreground">In vault</div>
+                <div className="font-mono-num text-sm font-bold text-secondary">${vaultBalance.toFixed(2)}</div>
+              </div>
+            </div>
+            {vaultUnlocked && (
+              <>
+                <div className="mt-3 flex items-center justify-between text-xs">
+                  <span className="text-muted-foreground">Deposit this round</span>
+                  <span className="font-mono-num font-bold text-secondary">${vaultDeposit.toFixed(2)} of ${pool.toFixed(2)}</span>
+                </div>
+                <input
+                  type="range"
+                  min={0}
+                  max={Math.floor(pool)}
+                  step={1}
+                  value={vaultDeposit}
+                  onChange={(e) => { audio.sfxTick(); setVaultDeposit(Number(e.target.value)); }}
+                  className="mt-2 w-full accent-secondary"
+                  aria-label="Deposit amount to vault"
+                />
+                <div className="mt-1 text-[10px] text-muted-foreground">
+                  Investing <span className="font-mono-num font-bold text-primary">${investablePool.toFixed(2)}</span> this round.
+                </div>
+              </>
+            )}
+          </div>
+
           {/* Allocation totals + confidence + invest */}
           <div className="panel mt-4 p-4">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Total allocated</span>
-              <span className={`font-mono-num text-xl font-extrabold ${overAllocated ? "text-loss" : allocated === 100 ? "text-primary" : "text-foreground"}`}>
+              <span className="text-sm text-muted-foreground">
+                Total allocated {mustInvestAll && <span className="ml-1 text-[10px] uppercase tracking-widest text-loss">must = 100%</span>}
+              </span>
+              <span className={`font-mono-num text-xl font-extrabold ${overAllocated ? "text-loss" : allocated === 100 ? "text-primary" : mustInvestAll ? "text-loss" : "text-foreground"}`}>
                 {allocated}%
               </span>
             </div>
@@ -166,6 +210,11 @@ export function LevelScreen({
             {overAllocated && (
               <div className="mt-2 flex items-center gap-1.5 text-xs text-loss">
                 <AlertTriangle className="h-3.5 w-3.5" /> Over 100% — reduce some sliders.
+              </div>
+            )}
+            {mustInvestAll && allocated < 100 && !overAllocated && (
+              <div className="mt-2 flex items-center gap-1.5 text-xs text-loss">
+                <AlertTriangle className="h-3.5 w-3.5" /> Vault locked — allocate exactly 100% across the companies.
               </div>
             )}
 
