@@ -7,8 +7,10 @@ import {
   TOTAL_LEVELS,
   LIFELINES,
   MARKET_DICTIONARY,
+  MAX_STARS,
 } from "@/game/constants";
 import { Allocation, LevelOutcome, lifelineReveal, runLevel } from "@/game/engine";
+import { useProgression } from "@/game/progression";
 import { HomeScreen } from "@/components/stockquest/HomeScreen";
 import { Hud } from "@/components/stockquest/Hud";
 import { LevelScreen } from "@/components/stockquest/LevelScreen";
@@ -17,10 +19,12 @@ import { NewspaperScreen } from "@/components/stockquest/NewspaperScreen";
 import { WinScreen } from "@/components/stockquest/WinScreen";
 import { DictionaryModal } from "@/components/stockquest/DictionaryModal";
 import { TickerTape } from "@/components/stockquest/TickerTape";
+import { LevelSelectScreen } from "@/components/stockquest/LevelSelectScreen";
+import { LevelDetailModal } from "@/components/stockquest/LevelDetailModal";
 import { audio } from "@/audio/audioEngine";
 import { useAudioUnlock, useMute } from "@/audio/useAudio";
 
-type Phase = "home" | "level" | "results" | "newspaper" | "win";
+type Phase = "home" | "map" | "level" | "results" | "newspaper" | "win";
 
 interface RoundLog {
   level: number;
@@ -33,12 +37,15 @@ const Index = () => {
   const [phase, setPhase] = useState<Phase>("home");
   const [investorTypeId, setInvestorTypeId] = useState<InvestorType["id"] | null>(null);
   const [levelIdx, setLevelIdx] = useState(0); // 0..9
-  const [worth, setWorth] = useState(STARTING_CASH);
   const [lifelinesLeft, setLifelinesLeft] = useState(LIFELINES);
   const [unlockedTerms, setUnlockedTerms] = useState<string[]>([]);
   const [newlyUnlocked, setNewlyUnlocked] = useState<string[]>([]);
   const [dictionaryOpen, setDictionaryOpen] = useState(false);
   const [bossActive, setBossActive] = useState(false);
+  const [detailLevel, setDetailLevel] = useState<number | null>(null);
+
+  const progression = useProgression();
+  const { state, recordOutcome, startLevel, reset: resetProgression, depositVault } = progression;
 
   useAudioUnlock();
   const { muted, toggle: toggleMute } = useMute();
@@ -47,6 +54,9 @@ const Index = () => {
   const [lastOutcome, setLastOutcome] = useState<LevelOutcome | null>(null);
   const [lastConfidence, setLastConfidence] = useState<"low" | "medium" | "high">("medium");
   const [poolBeforeLast, setPoolBeforeLast] = useState(STARTING_CASH);
+  const [lastRoundStars, setLastRoundStars] = useState(0);
+  const [lastPersonalBest, setLastPersonalBest] = useState(false);
+  const [lastPreviousStars, setLastPreviousStars] = useState(0);
 
   const [history, setHistory] = useState<RoundLog[]>([]);
 
@@ -57,22 +67,39 @@ const Index = () => {
 
   const hotStreak = history.slice(-3).length === 3 && history.slice(-3).every((r) => r.profit > 0);
   const losingStreak = history.slice(-2).length === 2 && history.slice(-2).every((r) => r.profit < 0);
+  const totalStarsEarned = state.levels.reduce((s, l) => s + l.stars, 0);
+  const totalWorth = state.worth + state.vault;
 
   // Music orchestration based on phase + boss state
   useEffect(() => {
-    if (phase === "home") audio.startMusic("home");
+    if (phase === "home" || phase === "map") audio.startMusic("home");
     else if (phase === "win") audio.startMusic("win");
     else audio.startMusic(bossActive ? "boss" : "level");
   }, [phase, bossActive]);
 
   function handleStart() {
     if (!investorTypeId) return;
-    setLevelIdx(0);
-    setWorth(STARTING_CASH);
+    setPhase("map");
+  }
+
+  function handlePickLevel(levelNum: number) {
+    const rec = state.levels[levelNum - 1];
+    if (!rec.unlocked) return;
+    if (rec.played) {
+      // Show detail modal for completed levels.
+      setDetailLevel(levelNum);
+    } else {
+      // Enter the level fresh.
+      enterLevel(levelNum);
+    }
+  }
+
+  function enterLevel(levelNum: number) {
+    setDetailLevel(null);
+    setLevelIdx(levelNum - 1);
     setLifelinesLeft(LIFELINES);
-    setUnlockedTerms([]);
-    setNewlyUnlocked([]);
-    setHistory([]);
+    startLevel(levelNum);
+    setBossActive(false);
     setPhase("level");
   }
 
@@ -83,15 +110,31 @@ const Index = () => {
     return lifelineReveal(hintId);
   }
 
-  function handleInvest(allocation: Allocation, confidence: "low" | "medium" | "high", bossHintId: string | null) {
+  function handleInvest(
+    allocation: Allocation,
+    confidence: "low" | "medium" | "high",
+    bossHintId: string | null,
+    vaultDeposit: number,
+  ) {
     audio.sfxInvest();
     const cfg = LEVELS[levelIdx];
-    const pool = worth;
-    const outcome = runLevel(cfg.level, pool, allocation, bossHintId ? [bossHintId] : []);
-    setPoolBeforeLast(pool);
+    const poolAtStart = state.worth;
+    // Stash vault deposit before computing returns.
+    if (vaultDeposit > 0 && state.vaultUnlocked) {
+      depositVault(vaultDeposit);
+    }
+    const investablePool = Math.max(0, +(poolAtStart - vaultDeposit).toFixed(2));
+    const outcome = runLevel(cfg.level, investablePool, allocation, bossHintId ? [bossHintId] : []);
+
+    setPoolBeforeLast(poolAtStart);
     setLastOutcome(outcome);
     setLastConfidence(confidence);
-    setWorth(outcome.totalReturned);
+
+    // Record into progression — this updates worth + unlocks next level + vault.
+    const rec = recordOutcome(cfg.level, poolAtStart, outcome);
+    setLastRoundStars(rec.newStars);
+    setLastPersonalBest(rec.newPersonalBest);
+    setLastPreviousStars(rec.previousStars);
 
     // Unlock dictionary terms for this level
     const newKeys = cfg.unlockTerms.filter((k) => MARKET_DICTIONARY[k] && !unlockedTerms.includes(k));
@@ -109,7 +152,6 @@ const Index = () => {
       else audio.sfxLoss();
     }, 250);
 
-    // Track history
     const hadWinningPick = outcome.results.some((r) => r.invested > 0 && r.pctChange > 0);
     setHistory((h) => [...h, { level: cfg.level, profit: outcome.profit, diversificationStars: outcome.diversificationStars, hadWinningPick }]);
 
@@ -126,14 +168,23 @@ const Index = () => {
   }
 
   function handleAfterNewspaper() {
-    setLevelIdx((i) => i + 1);
+    const nextLevel = levelIdx + 2; // +1 for next, then convert to 1-indexed
     setNewlyUnlocked([]);
-    setPhase("level");
+    enterLevel(nextLevel);
   }
 
   function handlePlayAgain() {
+    resetProgression();
     setPhase("home");
     setInvestorTypeId(null);
+    setHistory([]);
+    setUnlockedTerms([]);
+    setNewlyUnlocked([]);
+    setLifelinesLeft(LIFELINES);
+  }
+
+  function handleOpenMap() {
+    setPhase("map");
   }
 
   // Derived stats for win screen
@@ -152,14 +203,37 @@ const Index = () => {
     );
   }
 
+  if (phase === "map") {
+    return (
+      <>
+        <LevelSelectScreen
+          state={state}
+          onPickLevel={handlePickLevel}
+          onBackHome={() => setPhase("home")}
+        />
+        {detailLevel !== null && (
+          <LevelDetailModal
+            levelNum={detailLevel}
+            record={state.levels[detailLevel - 1]}
+            onClose={() => setDetailLevel(null)}
+            onReplay={() => enterLevel(detailLevel)}
+            onContinue={() => enterLevel(detailLevel)}
+          />
+        )}
+      </>
+    );
+  }
+
   if (phase === "win") {
     return (
       <WinScreen
-        finalWorth={worth}
+        finalWorth={totalWorth}
         signalsRead={signalsRead}
         totalSignals={totalSignals}
         avgDiversification={avgDiv}
+        totalStarsEarned={totalStarsEarned}
         onPlayAgain={handlePlayAgain}
+        onBackToMap={() => setPhase("map")}
       />
     );
   }
@@ -168,8 +242,8 @@ const Index = () => {
     <>
       <TickerTape />
       <Hud
-        portfolio={worth}
-        totalWorth={worth}
+        portfolio={state.worth}
+        totalWorth={totalWorth}
         level={LEVELS[levelIdx].level}
         totalLevels={TOTAL_LEVELS}
         investor={investor}
@@ -177,17 +251,24 @@ const Index = () => {
         unlockedCount={unlockedTerms.length}
         muted={muted}
         onToggleMute={toggleMute}
+        starsEarned={totalStarsEarned}
+        maxStars={MAX_STARS}
+        onOpenMap={handleOpenMap}
+        vaultUnlocked={state.vaultUnlocked}
+        vault={state.vault}
       />
 
       {phase === "level" && (
         <LevelScreen
           config={LEVELS[levelIdx]}
-          pool={worth}
+          pool={state.worth}
           lifelinesLeft={lifelinesLeft}
           onUseLifeline={handleUseLifeline}
           onInvest={handleInvest}
           onBossOpen={() => setBossActive(true)}
           onBossClose={() => setBossActive(false)}
+          vaultUnlocked={state.vaultUnlocked}
+          vaultBalance={state.vault}
         />
       )}
 
@@ -196,12 +277,16 @@ const Index = () => {
           config={LEVELS[levelIdx]}
           outcome={lastOutcome}
           pool={poolBeforeLast}
-          newWorth={worth}
+          newWorth={state.worth + state.vault}
           confidence={lastConfidence}
           hotStreak={hotStreak}
           losingStreak={losingStreak}
           onNext={handleAfterResults}
           isLast={levelIdx + 1 >= TOTAL_LEVELS}
+          roundStars={lastRoundStars}
+          personalBest={lastPersonalBest}
+          previousStars={lastPreviousStars}
+          onBackToMap={handleOpenMap}
         />
       )}
 

@@ -1,5 +1,5 @@
-import { STARTING_CASH } from "@/game/constants";
-import { Star, Trophy, Repeat } from "lucide-react";
+import { STARTING_CASH, MAX_STARS, getRank } from "@/game/constants";
+import { Star, Trophy, Repeat, Map } from "lucide-react";
 import { Logo } from "./Logo";
 
 interface WinScreenProps {
@@ -7,12 +7,17 @@ interface WinScreenProps {
   signalsRead: number;
   totalSignals: number;
   avgDiversification: number;
+  totalStarsEarned: number;
   onPlayAgain: () => void;
+  onBackToMap: () => void;
 }
 
-export function WinScreen({ finalWorth, signalsRead, totalSignals, avgDiversification, onPlayAgain }: WinScreenProps) {
+export function WinScreen({
+  finalWorth, signalsRead, totalSignals, avgDiversification, totalStarsEarned, onPlayAgain, onBackToMap,
+}: WinScreenProps) {
   const pct = ((finalWorth - STARTING_CASH) / STARTING_CASH) * 100;
   const win = finalWorth >= STARTING_CASH;
+  const rank = getRank(totalStarsEarned);
 
   return (
     <div className="min-h-screen px-5 py-12">
@@ -25,11 +30,19 @@ export function WinScreen({ finalWorth, signalsRead, totalSignals, avgDiversific
             {win ? "You beat the market!" : "Great run — markets are tough!"}
           </h2>
 
+          <div className="mt-5 inline-flex items-center gap-2 rounded-full bg-gradient-amber px-5 py-2 text-base font-extrabold text-accent-foreground shadow-amber">
+            {rank.emoji} {rank.title}
+          </div>
+
           <div className="mx-auto mt-8 grid max-w-xl grid-cols-2 gap-3 sm:grid-cols-4">
             <Stat label="Final worth" value={`$${finalWorth.toFixed(2)}`} accent />
             <Stat label="Total return" value={`${pct >= 0 ? "+" : ""}${pct.toFixed(1)}%`} positive={pct >= 0} />
-            <Stat label="Signals read" value={`${signalsRead}/${totalSignals}`} />
+            <Stat label="Stars" value={`${totalStarsEarned}/${MAX_STARS}`} />
             <Stat label="Avg. diversification" value={`${avgDiversification.toFixed(1)}★`} />
+          </div>
+
+          <div className="mx-auto mt-4 text-xs text-muted-foreground">
+            Signals read correctly: <span className="font-mono-num font-bold text-foreground">{signalsRead}/{totalSignals}</span>
           </div>
 
           <div className="mx-auto mt-6 inline-flex items-center gap-1 text-accent">
@@ -38,12 +51,20 @@ export function WinScreen({ finalWorth, signalsRead, totalSignals, avgDiversific
             ))}
           </div>
 
-          <button
-            onClick={onPlayAgain}
-            className="mt-8 inline-flex items-center gap-2 rounded-xl bg-gradient-primary px-8 py-3 text-base font-extrabold uppercase tracking-widest text-primary-foreground glow-primary hover:scale-105"
-          >
-            <Repeat className="h-4 w-4" /> Play again
-          </button>
+          <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+            <button
+              onClick={onBackToMap}
+              className="inline-flex items-center gap-2 rounded-xl border border-border bg-surface px-6 py-3 text-sm font-bold hover:border-accent hover:text-accent"
+            >
+              <Map className="h-4 w-4" /> Level Map
+            </button>
+            <button
+              onClick={onPlayAgain}
+              className="inline-flex items-center gap-2 rounded-xl bg-gradient-primary px-8 py-3 text-base font-extrabold uppercase tracking-widest text-primary-foreground glow-primary hover:scale-105"
+            >
+              <Repeat className="h-4 w-4" /> Play again
+            </button>
+          </div>
         </div>
 
         <p className="mt-10 text-center text-[11px] leading-relaxed text-muted-foreground/80">
