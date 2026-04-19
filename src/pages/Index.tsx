@@ -173,6 +173,8 @@ const Index = () => {
         investor={investor}
         onOpenDictionary={() => setDictionaryOpen(true)}
         unlockedCount={unlockedTerms.length}
+        muted={muted}
+        onToggleMute={toggleMute}
       />
 
       {phase === "level" && (
@@ -182,6 +184,8 @@ const Index = () => {
           lifelinesLeft={lifelinesLeft}
           onUseLifeline={handleUseLifeline}
           onInvest={handleInvest}
+          onBossOpen={() => setBossActive(true)}
+          onBossClose={() => setBossActive(false)}
         />
       )}
 
