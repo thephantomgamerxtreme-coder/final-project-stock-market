@@ -16,6 +16,7 @@ import { ResultsScreen } from "@/components/stockquest/ResultsScreen";
 import { NewspaperScreen } from "@/components/stockquest/NewspaperScreen";
 import { WinScreen } from "@/components/stockquest/WinScreen";
 import { DictionaryModal } from "@/components/stockquest/DictionaryModal";
+import { TickerTape } from "@/components/stockquest/TickerTape";
 import { audio } from "@/audio/audioEngine";
 import { useAudioUnlock, useMute } from "@/audio/useAudio";
 
@@ -165,6 +166,7 @@ const Index = () => {
 
   return (
     <>
+      <TickerTape />
       <Hud
         portfolio={worth}
         totalWorth={worth}
