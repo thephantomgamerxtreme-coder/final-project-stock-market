@@ -120,7 +120,7 @@ export function runLevel(
   const allHintIds = [...cfg.hintIds, ...extraHintIds];
   // De-dup
   const hintIds = Array.from(new Set(allHintIds));
-  const shocks = computeSectorShocks(hintIds);
+  const shocks = computeSectorShocks(hintIds, cfg.level);
   const activeHints = hintIds.map((id) => HINTS[id]).filter(Boolean);
 
   const results: RoundResult[] = [];
@@ -131,7 +131,7 @@ export function runLevel(
   for (const ticker of cfg.tickers) {
     const pct = (allocation[ticker] ?? 0) / 100;
     const invested = +(pool * pct).toFixed(2);
-    const move = pctChangeForTicker(ticker, shocks);
+    const move = pctChangeForTicker(ticker, shocks, cfg.level);
     const returned = +(invested * (1 + move)).toFixed(2);
     const reason = explainTickerMove(ticker, activeHints);
     results.push({ ticker, invested, returned, pctChange: move, reason });
