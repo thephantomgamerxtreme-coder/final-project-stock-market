@@ -15,11 +15,12 @@ interface LevelScreenProps {
   onBossClose?: () => void;
   vaultUnlocked: boolean;
   vaultBalance: number;
+  onWithdrawVault: (amount: number) => void;
 }
 
 export function LevelScreen({
   config, pool, lifelinesLeft, onUseLifeline, onInvest, onBossOpen, onBossClose,
-  vaultUnlocked, vaultBalance,
+  vaultUnlocked, vaultBalance, onWithdrawVault,
 }: LevelScreenProps) {
   const [allocation, setAllocation] = useState<Allocation>(() =>
     Object.fromEntries(config.tickers.map((t) => [t, 0])),
