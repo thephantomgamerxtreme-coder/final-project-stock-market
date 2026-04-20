@@ -155,7 +155,7 @@ export function runLevel(
   // Best-alternative single-stock allocation across the offered tickers.
   let best: { ticker: string; profitDelta: number; pctChange: number } | null = null;
   for (const t of cfg.tickers) {
-    const move = pctChangeForTicker(t, shocks);
+    const move = pctChangeForTicker(t, shocks, cfg.level);
     const altReturn = pool * (1 + move);
     const altProfit = altReturn - pool;
     const delta = +(altProfit - profit).toFixed(2);
