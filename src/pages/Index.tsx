@@ -45,7 +45,7 @@ const Index = () => {
   const [detailLevel, setDetailLevel] = useState<number | null>(null);
 
   const progression = useProgression();
-  const { state, recordOutcome, startLevel, reset: resetProgression, depositVault } = progression;
+  const { state, recordOutcome, startLevel, reset: resetProgression, depositVault, withdrawVault } = progression;
 
   useAudioUnlock();
   const { muted, toggle: toggleMute } = useMute();
@@ -269,6 +269,7 @@ const Index = () => {
           onBossClose={() => setBossActive(false)}
           vaultUnlocked={state.vaultUnlocked}
           vaultBalance={state.vault}
+          onWithdrawVault={withdrawVault}
         />
       )}
 
