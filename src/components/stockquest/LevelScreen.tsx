@@ -32,6 +32,14 @@ export function LevelScreen({
   const [pendingSubmit, setPendingSubmit] = useState(false);
   // Vault deposit slider (only available once unlocked). Caps at current pool.
   const [vaultDeposit, setVaultDeposit] = useState(0);
+  const [vaultWithdraw, setVaultWithdraw] = useState(0);
+
+  function handleWithdraw() {
+    if (vaultWithdraw <= 0) return;
+    audio.sfxTick();
+    onWithdrawVault(vaultWithdraw);
+    setVaultWithdraw(0);
+  }
 
   // Timer for levels 9 & 10
   const hasTimer = TIMER_LEVELS.includes(config.level);
