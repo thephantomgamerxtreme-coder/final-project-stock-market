@@ -25,27 +25,43 @@ export interface LevelOutcome {
   drivers: Record<string, { hintId: string; pct: number }[]>;
 }
 
+// Difficulty scaling — later levels punish wrong picks harder and widen the shock range.
+// Returns multipliers for upside vs downside shocks plus the absolute cap.
+export function difficultyFor(level: number): { upMult: number; downMult: number; cap: number; driftMult: number } {
+  // Level 1 → easy, Level 10 → brutal. Downside ramps faster than upside.
+  const t = Math.max(0, Math.min(1, (level - 1) / 9)); // 0..1
+  const upMult = 1 + t * 0.15;            // 1.00 → 1.15  (slight reward bump)
+  const downMult = 1 + t * 1.20;          // 1.00 → 2.20  (wrong picks bleed hard late)
+  const cap = 0.55 + t * 0.45;            // 0.55 → 1.00  (allow bigger swings)
+  const driftMult = 1 + t * 1.5;          // noisier untouched stocks late game
+  return { upMult, downMult, cap, driftMult };
+}
+
 // Combine all relevant hints (level hints + boss event if confirmed) into a sector shock map.
-export function computeSectorShocks(hintIds: string[]): Record<string, number> {
+export function computeSectorShocks(hintIds: string[], level = 1): Record<string, number> {
+  const { upMult, downMult, cap } = difficultyFor(level);
   const shocks: Record<string, number> = {};
   for (const id of hintIds) {
     const h = HINTS[id];
     if (!h) continue;
     for (const imp of h.impacts) {
-      shocks[imp.sector] = (shocks[imp.sector] ?? 0) + imp.pct;
+      const scaled = imp.pct >= 0 ? imp.pct * upMult : imp.pct * downMult;
+      shocks[imp.sector] = (shocks[imp.sector] ?? 0) + scaled;
     }
   }
-  // Cap shocks to a sensible range so a single round can't 5x money.
+  // Cap shocks — asymmetric so downside can be harsher than upside.
   for (const k of Object.keys(shocks)) {
-    shocks[k] = Math.max(-0.6, Math.min(0.6, shocks[k]));
+    shocks[k] = Math.max(-cap, Math.min(cap * 0.85, shocks[k]));
   }
   return shocks;
 }
 
-export function pctChangeForTicker(ticker: string, shocks: Record<string, number>): number {
+export function pctChangeForTicker(ticker: string, shocks: Record<string, number>, level = 1): number {
   const sector = COMPANIES[ticker].sector;
-  // Tiny baseline drift so even untouched stocks move a little.
-  const drift = (Math.sin(ticker.charCodeAt(0) + ticker.length) * 0.03);
+  const { driftMult } = difficultyFor(level);
+  // Baseline drift so even untouched stocks move; later levels add more noise (often negative).
+  const seed = Math.sin(ticker.charCodeAt(0) + ticker.length);
+  const drift = seed * 0.03 * driftMult;
   return (shocks[sector] ?? 0) + drift;
 }
 
