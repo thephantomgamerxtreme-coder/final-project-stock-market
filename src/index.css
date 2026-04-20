@@ -81,10 +81,50 @@
 
   body {
     @apply bg-background text-foreground;
-    background: var(--gradient-bg);
+    background-color: hsl(var(--background));
+    background-image:
+      /* faint candlestick silhouettes (red/green bars) */
+      linear-gradient(to top, hsl(var(--gain) / 0.07) 0%, hsl(var(--gain) / 0.07) 38%, transparent 38%, transparent 100%),
+      /* fine grid */
+      linear-gradient(hsl(152 90% 52% / 0.04) 1px, transparent 1px),
+      linear-gradient(90deg, hsl(152 90% 52% / 0.04) 1px, transparent 1px),
+      /* coarse grid */
+      linear-gradient(hsl(152 90% 52% / 0.07) 1px, transparent 1px),
+      linear-gradient(90deg, hsl(152 90% 52% / 0.07) 1px, transparent 1px),
+      /* glowing orbs */
+      radial-gradient(circle at 15% 20%, hsl(152 90% 52% / 0.12), transparent 40%),
+      radial-gradient(circle at 85% 80%, hsl(184 78% 48% / 0.12), transparent 40%),
+      radial-gradient(circle at 50% 50%, hsl(38 95% 58% / 0.06), transparent 60%),
+      /* base gradient */
+      var(--gradient-bg);
+    background-size:
+      14px 100%,
+      24px 24px, 24px 24px,
+      120px 120px, 120px 120px,
+      100% 100%, 100% 100%, 100% 100%,
+      100% 100%;
     background-attachment: fixed;
+    background-repeat: repeat-x, repeat, repeat, repeat, repeat, no-repeat, no-repeat, no-repeat, no-repeat;
+    background-position: bottom, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0;
     font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    position: relative;
   }
+
+  /* Animated chart line overlay */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 600' preserveAspectRatio='none'><polyline points='0,420 80,380 160,400 240,320 320,360 400,260 480,300 560,210 640,250 720,170 800,220 880,140 960,180 1040,110 1120,150 1200,80' fill='none' stroke='hsl(152,90%25,52%25)' stroke-width='2' opacity='0.18'/><polyline points='0,500 80,470 160,490 240,440 320,460 400,400 480,430 560,370 640,400 720,340 800,370 880,310 960,340 1040,280 1120,310 1200,250' fill='none' stroke='hsl(184,78%25,48%25)' stroke-width='2' opacity='0.14'/></svg>");
+    background-size: 100% 70%;
+    background-position: bottom;
+    background-repeat: no-repeat;
+    mix-blend-mode: screen;
+  }
+
+  #root { position: relative; z-index: 1; }
 
   .font-mono-num {
     font-family: var(--font-mono);
