@@ -15,11 +15,12 @@ interface LevelScreenProps {
   onBossClose?: () => void;
   vaultUnlocked: boolean;
   vaultBalance: number;
+  onWithdrawVault: (amount: number) => void;
 }
 
 export function LevelScreen({
   config, pool, lifelinesLeft, onUseLifeline, onInvest, onBossOpen, onBossClose,
-  vaultUnlocked, vaultBalance,
+  vaultUnlocked, vaultBalance, onWithdrawVault,
 }: LevelScreenProps) {
   const [allocation, setAllocation] = useState<Allocation>(() =>
     Object.fromEntries(config.tickers.map((t) => [t, 0])),
@@ -31,6 +32,14 @@ export function LevelScreen({
   const [pendingSubmit, setPendingSubmit] = useState(false);
   // Vault deposit slider (only available once unlocked). Caps at current pool.
   const [vaultDeposit, setVaultDeposit] = useState(0);
+  const [vaultWithdraw, setVaultWithdraw] = useState(0);
+
+  function handleWithdraw() {
+    if (vaultWithdraw <= 0) return;
+    audio.sfxTick();
+    onWithdrawVault(vaultWithdraw);
+    setVaultWithdraw(0);
+  }
 
   // Timer for levels 9 & 10
   const hasTimer = TIMER_LEVELS.includes(config.level);
@@ -187,6 +196,35 @@ export function LevelScreen({
                 <div className="mt-1 text-[10px] text-muted-foreground">
                   Investing <span className="font-mono-num font-bold text-primary">${investablePool.toFixed(2)}</span> this round.
                 </div>
+
+                {vaultBalance > 0 && (
+                  <div className="mt-4 rounded-lg border border-secondary/30 bg-secondary/5 p-3">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-semibold text-secondary">↩ Withdraw from vault</span>
+                      <span className="font-mono-num font-bold text-secondary">${vaultWithdraw.toFixed(2)} of ${vaultBalance.toFixed(2)}</span>
+                    </div>
+                    <input
+                      type="range"
+                      min={0}
+                      max={Math.floor(vaultBalance)}
+                      step={1}
+                      value={vaultWithdraw}
+                      onChange={(e) => { audio.sfxTick(); setVaultWithdraw(Number(e.target.value)); }}
+                      className="mt-2 w-full accent-secondary"
+                      aria-label="Withdraw amount from vault"
+                    />
+                    <button
+                      onClick={handleWithdraw}
+                      disabled={vaultWithdraw <= 0}
+                      className="mt-2 w-full rounded-md border border-secondary/50 bg-secondary/15 py-1.5 text-xs font-bold uppercase tracking-wider text-secondary transition hover:bg-secondary/25 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      Move to cash pool
+                    </button>
+                    <p className="mt-1 text-[10px] text-muted-foreground">
+                      Pulls money back into your investable pool for this round.
+                    </p>
+                  </div>
+                )}
               </>
             )}
           </div>
