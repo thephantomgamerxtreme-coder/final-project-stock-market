@@ -73,14 +73,14 @@ export function WinScreen({
   <div className="mb-5">
     <h4 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-2">Why I chose this concept</h4>
     <p className="text-sm text-muted-foreground leading-relaxed">
-      I chose Financial Markets from Class 12 Business Studies because it is a concept that affects everyone's real life, yet most students find it abstract and hard to understand just from a textbook. I wanted to make it feel real — where your decisions actually have consequences based on real-world news, just like actual investing works.
+      I chose Financial Markets from Class 12 Business Studies because it is a concept that affects everyone's real life, but yet most students do not know much about the stock market and the ABC's of investing. I wanted to make it feel real — where your decisions actually have consequences based on real-world news, which I have always found to be an extremely interesting topic.
     </p>
   </div>
 
   <div>
     <h4 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-2">How this game teaches the concept</h4>
     <p className="text-sm text-muted-foreground leading-relaxed">
-      StockQuest translates the core principle of Financial Markets — that stock prices move based on real-world economic events — directly into gameplay. Every level presents real news scenarios like OPEC oil cuts, interest rate changes, pandemics, and tech breakthroughs. Players must read these signals and decide where to allocate their money, exactly how a real investor would. The game teaches that markets are not random — they follow cause and effect. A pandemic hurts airlines and helps pharma. A rate hike hurts tech and helps banks. By playing 10 levels of increasing difficulty, players build an intuitive understanding of how news drives markets, which is the exact core of the Financial Markets chapter.
+      StockQuest translates the core principle of Financial Markets — that stock prices move based on real-world economic events — directly into gameplay. Every level presents real news scenarios like OPEC oil cuts, interest rate changes, pandemics, and tech breakthroughs. Players must read these signals and decide where to allocate their money, exactly how a real investor would. The game teaches that markets are not random — they follow cause and effect. A pandemic hurts airlines and helps pharma. A rate hike hurts tech and helps banks. By playing 10 levels of increasing difficulty, players understand how news drives markets, which is the exact core of the Financial Markets chapter.
     </p>
   </div>
 </div>
