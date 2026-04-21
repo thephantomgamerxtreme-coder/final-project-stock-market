@@ -70,7 +70,8 @@ export function HomeScreen({ selectedType, onSelectType, onStart }: HomeScreenPr
 
         <p className="mt-16 text-center text-[11px] leading-relaxed text-muted-foreground/80">
           StockQuest is for educational purposes only. It does not constitute financial advice.
-          All companies and events are fictional or used for learning.
+          All companies and events are fictional or used for learning. This game was created by Nisarg N Bharadwaj, Grade 8, Jain Heritage School as part of the 
+          AI Summer Camp for students by the Times of India. It teaches Stock Market from the chapter Financial Markets from Grade 12 .Business Studies
         </p>
       </div>
     </div>
