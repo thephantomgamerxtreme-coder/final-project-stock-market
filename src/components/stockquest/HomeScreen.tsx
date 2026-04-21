@@ -12,7 +12,7 @@ export function HomeScreen({ selectedType, onSelectType, onStart }: HomeScreenPr
     <div className="min-h-screen px-5 py-10 sm:py-16">
       <div className="mx-auto max-w-4xl">
         <header className="flex flex-col items-center text-center">
-          <img src="/logo-toi.png" alt="Times of India Logo" className="mx-auto mb-6 h-20 object-contain" /> <Logo size="lg" />
+          <img src="/logo-toi.png" alt="Times of India Logo" className="mx-auto mb-6 h-20 object-contain" />
           <Logo size="lg" />
           <h1 className="sr-only">StockQuest — educational stock market game for kids</h1>
           <p className="mt-6 max-w-2xl text-base sm:text-lg text-muted-foreground">
